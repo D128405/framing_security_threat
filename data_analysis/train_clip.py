@@ -337,7 +337,7 @@ if __name__ == "__main__":
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True,  num_workers=0)
     test_loader  = DataLoader(test_dataset,  batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
 
-    # ── Optimiser: different LR for encoder vs. head ──────────────────────────
+    # ── Optimizer: different LR for encoder vs. head ──────────────────────────
     optimizer = torch.optim.AdamW([
         {"params": classifier.clip.parameters(),       "lr": CLIP_LR},
         {"params": classifier.classifier.parameters(), "lr": LEARNING_RATE},
