@@ -28,7 +28,7 @@ from sklearn.metrics import (
     confusion_matrix,
 )
 
-# ── Paths (Aligned across all scripts) ────────────────────────────────────────
+# Paths aligned across all scripts
 # Use the common root for all data analysis results
 PROJECT_ROOT = "/Users/davidluu/Library/Mobile Documents/com~apple~CloudDocs/ACADEMIA/me/Publications/Securitizing the Global South in a Bipolar World Order A Multimodal Analysis of US and Chinese News Media/Data Analysis"
 DATA_DIR    = os.path.join(PROJECT_ROOT, "results")
@@ -38,17 +38,17 @@ README_MD   = os.path.join(PROJECT_ROOT, "READme.md")
 os.makedirs(os.path.join(RESULTS_DIR, "trained_model"), exist_ok=True)
 os.makedirs(os.path.join(RESULTS_DIR, "logs"),          exist_ok=True)
 
-# ── Label config ──────────────────────────────────────────────────────────────
+# Label configuration
 LABELS   = ["high", "moderate", "low", "not applicable"]
 LABEL2ID = {l: i for i, l in enumerate(LABELS)}
 ID2LABEL = {i: l for l, i in LABEL2ID.items()}
 NUM_LABELS = len(LABELS)
 
-# ── Model ─────────────────────────────────────────────────────────────────────
+# Model
 MODEL_NAME = "roberta-base"
 MAX_LENGTH = 512
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# Helpers
 def get_ver(mod, attr="__version__"):
     try:
         return getattr(mod, attr)
@@ -95,7 +95,7 @@ def read_csv_robust(path: str) -> pd.DataFrame:
             continue
     return pd.read_csv(path, encoding="utf-8", errors="replace")
 
-# ── Tokeniser ─────────────────────────────────────────────────────────────────
+# Tokenizer
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True)
 
 def tokenize_batch(batch):
@@ -106,7 +106,7 @@ def tokenize_batch(batch):
         max_length=MAX_LENGTH,
     )
 
-# ── Metrics ───────────────────────────────────────────────────────────────────
+# Metrics
 def compute_metrics(eval_pred):
     logits, labels = eval_pred
     preds = np.argmax(logits, axis=-1)
@@ -123,11 +123,11 @@ def compute_metrics(eval_pred):
         "recall_weighted":    recall,
     }
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# Main
 if __name__ == "__main__":
     t0 = time.time()
 
-    # ── Load data ─────────────────────────────────────────────────────────────
+    # Load data
     train_path = os.path.join(DATA_DIR, "train_text.csv")
     test_path  = os.path.join(DATA_DIR, "test_text.csv")
 
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     train_df["label_id"] = train_df["label_id"].astype(int)
     test_df["label_id"]  = test_df["label_id"].astype(int)
 
-    # ── Build HF Datasets ─────────────────────────────────────────────────────
+    # Build datasets
     def to_hf_dataset(df: pd.DataFrame) -> Dataset:
         return Dataset.from_dict({
             "Text":    df["Text"].astype(str).tolist(),
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     train_ds = train_ds.map(tokenize_batch, batched=True, remove_columns=["Text"])
     test_ds  = test_ds.map(tokenize_batch,  batched=True, remove_columns=["Text"])
 
-    # ── Model & device ────────────────────────────────────────────────────────
+    # Model and device
     device = torch.device(
         "mps"  if torch.backends.mps.is_available() else
         "cuda" if torch.cuda.is_available()         else
@@ -180,7 +180,7 @@ if __name__ == "__main__":
         label2id=LABEL2ID,
     ).to(device)
 
-    # ── Training args ─────────────────────────────────────────────────────────
+    # Training arguments
     # The final model is saved here for finetuned_analysis.py
     save_path = os.path.join(RESULTS_DIR, "trained_model", "roberta_text")
     os.makedirs(save_path, exist_ok=True)
@@ -206,7 +206,7 @@ if __name__ == "__main__":
         dataloader_pin_memory=(device.type == "cuda"),
     )
 
-    # ── Class weights (optional) ───────────────────────────────────────────────
+    # Class weights
     # Look for an externally computed class_weights JSON.
     weights_path = os.path.join(DATA_DIR, "class_weights_text.json")
     class_weights = None
@@ -219,7 +219,7 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Failed to load class weights: {e}")
 
-    # ── Weighted Trainer (if class weights found) ──────────────────────────────
+    # Weighted trainer
     class WeightedTrainer(Trainer):
         def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
             labels = inputs.pop("labels")
@@ -229,7 +229,7 @@ if __name__ == "__main__":
             loss = loss_fct(logits, labels)
             return (loss, outputs) if return_outputs else loss
 
-    # ── Trainer instantiation ─────────────────────────────────────────────────
+    # Trainer instantiation
     trainer_class = WeightedTrainer if class_weights is not None else Trainer
     trainer = trainer_class(
         model=model,
@@ -242,13 +242,13 @@ if __name__ == "__main__":
     print("\nStarting RoBERTa fine-tuning on Text → Securitization_Text …")
     trainer.train()
 
-    # ── Evaluation on test set ────────────────────────────────────────────────
+    # Evaluation on test set
     print("\nEvaluating on test set …")
     pred_output = trainer.predict(test_ds)
     preds  = np.argmax(pred_output.predictions, axis=-1)
     labels = test_df["label_id"].values
 
-    print("\n── Classification Report ──────────────────────────────────────────")
+    print("\nClassification Report")
     report = classification_report(labels, preds, target_names=LABELS, zero_division=0)
     print(report)
 
@@ -261,7 +261,7 @@ if __name__ == "__main__":
         fp.write("RoBERTa — Text Securitization Classification\n" + "=" * 60 + "\n" + report)
         fp.write(f"\nWeighted F1: {f1_w:.4f}  |  Macro F1: {f1_m:.4f}\n")
 
-    # ── Save model ───────────────────────────────────────────────────────────
+    # Save model
     model.to("cpu").save_pretrained(save_path)
     tokenizer.save_pretrained(save_path)
     with open(os.path.join(save_path, "label2id.json"), "w", encoding="utf-8") as f:
