@@ -11,7 +11,7 @@ effect_size_r <- function(p_value, n_total) {
   return(Z / sqrt(n_total))
 }
 
-# ── Mapping Configuration ────────────────────────────────────────────────────
+# Mapping configuration
 region_map <- data.frame(
   region_code = c("a", "b", "c", "d", "e", "f", "g"),
   continent = c("North America", "South America", "Europe", "Africa", "Middle East", "Asia", "Australia")
@@ -24,10 +24,8 @@ load_cluster <- function(filename) {
     filter(Securitization_Text != "not applicable" | Securitization_Visual != "not applicable")
 }
 
-# ── RQ1: Global South (GS) vs. Global North (GN) ─────────────────────────────
-cat("\n======================================================\n")
+# RQ1: Global South (GS) vs. Global North (GN)
 cat("RQ1: EXTENT OF SECURITIZATION (GLOBAL SOUTH VS. NORTH)\n")
-cat("======================================================\n")
 
 # Use 'cluster_1' files for joint analysis of extent
 gs_data <- load_cluster("cluster_1_a_gs_hy_labeled.csv") %>% mutate(Group = "Global South")
@@ -55,10 +53,8 @@ if(!is.null(rq1_data) && nrow(rq1_data) > 0) {
   cat(sprintf("Effect size r = %.3f (|Z|/√N)\n", r_text))
 }
 
-# ── RQ2: China (ZH) vs. US (US) by Region ────────────────────────────────────
-cat("\n======================================================\n")
+# RQ2: China (ZH) vs. US (US) by Region
 cat("RQ2: CHINA (ZH) VS. USA (US) BY REGION\n")
-cat("======================================================\n")
 
 # Use 'cluster_2' files for specific outlet comparison
 rq2_data <- map_df(region_map$region_code, function(code) {
@@ -99,10 +95,8 @@ region_effect_sizes <- rq2_data %>%
   )
 print(region_effect_sizes)
 
-# ── RQ3: Textual vs. Visual Differences ──────────────────────────────────────
-cat("\n======================================================\n")
+# RQ3: Textual vs. Visual Differences
 cat("RQ3: MODALITY DIFFERENCES (TEXT VS. VISUAL)\n")
-cat("======================================================\n")
 
 all_files <- list.files(pattern = ".*_labeled\\.csv")
 # The paired subsample includes only articles where BOTH text and visual scores
