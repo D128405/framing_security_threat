@@ -13,9 +13,7 @@ from sklearn.metrics import cohen_kappa_score
 
 warnings.filterwarnings("ignore")
 
-# ══════════════════════════════════════════════════════════════════════════════
-# CONFIGURATION
-# ══════════════════════════════════════════════════════════════════════════════
+# Configuration
 PROJECT_ROOT = (
     "/Users/davidluu/Library/Mobile Documents/com~apple~CloudDocs/ACADEMIA/me/"
     "Publications/Securitizing the Global South in a Bipolar World Order "
@@ -38,9 +36,7 @@ TARGET_FILES = {
     "cluster_1_a_gn_hy_labeled.csv", "cluster_1_a_gs_hy_labeled.csv"
 }
 
-# ══════════════════════════════════════════════════════════════════════════════
-# HELPERS
-# ══════════════════════════════════════════════════════════════════════════════
+# Helpers
 
 def get_group(fname: str) -> str:
     f = fname.lower()
@@ -58,9 +54,7 @@ def interpret_kappa(k):
     if k > 0: return "Slight"
     return "Poor/None"
 
-# ══════════════════════════════════════════════════════════════════════════════
-# MAIN ANALYSIS
-# ══════════════════════════════════════════════════════════════════════════════
+# Main analysis
 
 def run_analysis():
     labeled_paths = glob.glob(os.path.join(INPUT_DIR, "*_labeled.csv"))
@@ -114,7 +108,7 @@ def run_analysis():
         
         all_data_frames.append(valid_df)
 
-    # ── Reporting ──────────────────────────────────────────────────────────────
+    # Reporting
     stats_df = pd.DataFrame(file_stats).sort_values(by="File")
     
     print("\n" + "="*85)
@@ -128,7 +122,7 @@ def run_analysis():
         kap_s = f"{r['Kappa']:.2f}" if not np.isnan(r['Kappa']) else "N/A"
         print(f"{r['File'][:30]:<30} | {int(r['N']):<4} | {r['Text_Mean']:>5.2f} | {r['Visual_Mean']:>5.2f} | {r['Modality_Gap']:>6.2f} | {rho_s:<6} | {kap_s}")
 
-    # ── Group Breakdowns (RQ1 and RQ2) ────────────────────────────────────────
+    # Group breakdowns: RQ1 and RQ2
     print("\n" + "="*85)
     print(f"{'GROUP BREAKDOWN: CONTINENTS & POWERS':^85}")
     print("="*85)
@@ -143,7 +137,7 @@ def run_analysis():
     
     print(group_agg)
 
-    # ── Overall Corpus Summary ────────────────────────────────────────────────
+    # Corpus summary
     full_corpus = pd.concat(all_data_frames, ignore_index=True)
     total_rho, _ = spearmanr(full_corpus["Score_Text"], full_corpus["Score_Visual"])
     total_kappa = cohen_kappa_score(full_corpus["Securitization_Text"], full_corpus["Securitization_Visual"])
@@ -159,7 +153,7 @@ def run_analysis():
     # Save to file
     with open(REPORT_PATH, "w") as f:
         f.write("Modality Agreement Detailed Analysis\n")
-        f.write("====================================\n\n")
+        f.write("===\n\n")
         f.write("PER-FILE ANALYSIS:\n")
         f.write(stats_df.to_string(index=False) + "\n\n")
         f.write("GROUP ANALYSIS:\n")
