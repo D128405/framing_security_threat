@@ -10,7 +10,7 @@ from datetime import datetime
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-# ── Paths ────────────────────────────────────────────────────────────────────
+# Paths
 BASE_DIR = (
     "/Users/davidluu/Library/Mobile Documents/com~apple~CloudDocs/ACADEMIA/me/"
     "Publications/Securitizing the Global South in a Bipolar World Order "
@@ -25,7 +25,7 @@ README_MD    = os.path.join(BASE_DIR, "READme.md")
 os.makedirs(DATA_DIR,        exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
-# ── Label config ─────────────────────────────────────────────────────────────
+# Label configuration
 # Valid labels across all annotation columns
 VALID_LABELS   = {"high", "moderate", "low", "not applicable"}
 LABEL2ID       = {"high": 0, "moderate": 1, "low": 2, "not applicable": 3}
@@ -42,7 +42,7 @@ NUMERIC_TO_TEXT = {
     "9": "not applicable", "9.0": "not applicable"
 }
 
-# ── Modality specs ────────────────────────────────────────────────────────────
+# Modality specifications
 MODALITIES = [
     {
         "name":        "text",
@@ -60,7 +60,7 @@ MODALITIES = [
 
 REQUIRED_BASE_COLS = ["X", "Date", "URL", "Text", "Image"]
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# Helpers
 def get_ver(mod, attr="__version__"):
     try:
         return getattr(mod, attr)
@@ -149,7 +149,7 @@ def validate_and_clean(df: pd.DataFrame, label_col: str, modality_name: str, req
     df = df.reset_index(drop=True)
     return df
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# Main
 if __name__ == "__main__":
     t0 = time.time()
     summary_lines = []
