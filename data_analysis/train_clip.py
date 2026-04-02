@@ -34,7 +34,7 @@ from torchvision import transforms
 
 warnings.filterwarnings("ignore")
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
+# Paths
 BASE_DIR = (
     "/Users/davidluu/Library/Mobile Documents/com~apple~CloudDocs/ACADEMIA/me/"
     "Publications/Securitizing the Global South in a Bipolar World Order "
@@ -49,13 +49,13 @@ os.makedirs(os.path.join(RESULTS_DIR, "trained_model"), exist_ok=True)
 os.makedirs(os.path.join(RESULTS_DIR, "logs"),          exist_ok=True)
 os.makedirs(IMAGE_CACHE_DIR, exist_ok=True)
 
-# ── Label config ──────────────────────────────────────────────────────────────
+# Label configuration
 LABELS    = ["high", "moderate", "low", "not applicable"]
 LABEL2ID  = {l: i for i, l in enumerate(LABELS)}
 ID2LABEL  = {i: l for l, i in LABEL2ID.items()}
 NUM_LABELS = len(LABELS)
 
-# ── Model ─────────────────────────────────────────────────────────────────────
+# Model
 CLIP_MODEL_NAME = "openai/clip-vit-base-patch32"
 IMAGE_TIMEOUT   = 10      # seconds per image download
 BATCH_SIZE      = 16
@@ -65,7 +65,7 @@ CLIP_LR         = 2e-5
 IMAGE_PLACEHOLDER = "placeholder"  # used when image cannot be fetched
 EARLY_STOPPING_PATIENCE = 3  # set to 0 or None to disable early stopping
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# Helpers
 def get_ver(mod, attr="__version__"):
     try:
         return getattr(mod, attr)
@@ -163,7 +163,7 @@ def fetch_image_to_cache(url: str, cache_dir: str, timeout: int = IMAGE_TIMEOUT)
         except Exception:
             return None
 
-# ── CLIP classifier model ─────────────────────────────────────────────────────
+# CLIP classifier model
 class CLIPClassifier(nn.Module):
     """CLIP visual encoder + linear classification head."""
     def __init__(self, clip_model: CLIPModel, num_labels: int):
@@ -200,7 +200,7 @@ class CLIPClassifier(nn.Module):
         logits    = self.classifier(projected)
         return logits
 
-# ── PyTorch dataset ───────────────────────────────────────────────────────────
+# PyTorch dataset
 class ImageDataset(TorchDataset):
     def __init__(self, image_list: list, label_list: list, processor: CLIPProcessor, transform=None):
         self.images    = image_list    # list of PIL.Image or None
@@ -226,7 +226,7 @@ class ImageDataset(TorchDataset):
         pixel_values = inputs["pixel_values"].squeeze(0)  # (3, H, W)
         return pixel_values, torch.tensor(self.labels[idx], dtype=torch.long)
 
-# ── Image prefetch (disk-cached) ───────────────────────────────────────────────
+# Image prefetch
 def prefetch_images(urls: list, cache_dir: str = IMAGE_CACHE_DIR) -> list:
     """
     Prefetch images and cache to disk. Returns list of PIL.Image objects (or placeholders).
@@ -250,7 +250,7 @@ def prefetch_images(urls: list, cache_dir: str = IMAGE_CACHE_DIR) -> list:
     print(f"  Done. {total - failed}/{total} images fetched or placeholder-loaded successfully.")
     return images
 
-# ── Training / evaluation loop ────────────────────────────────────────────────
+# Training7Evaluation loop
 def train_epoch(model, loader, optimizer, criterion, device):
     model.train()
     total_loss, correct, total = 0.0, 0, 0
@@ -279,11 +279,11 @@ def evaluate(model, loader, device):
         all_labels.extend(labels.numpy())
     return np.array(all_preds), np.array(all_labels)
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# Main
 if __name__ == "__main__":
     t0 = time.time()
 
-    # ── Load data ─────────────────────────────────────────────────────────────
+    # Load data
     train_path = os.path.join(DATA_DIR, "train_visual.csv")
     test_path  = os.path.join(DATA_DIR, "test_visual.csv")
 
@@ -303,13 +303,13 @@ if __name__ == "__main__":
     train_df["label_id"] = train_df["label_id"].astype(int)
     test_df["label_id"]  = test_df["label_id"].astype(int)
 
-    # ── Download & cache images ────────────────────────────────────────────────
+    # Download and cache images
     print("\nPrefetching training images (cached to disk) …")
     train_images = prefetch_images(train_df["Image"].tolist(), cache_dir=IMAGE_CACHE_DIR)
     print("Prefetching test images (cached to disk) …")
     test_images  = prefetch_images(test_df["Image"].tolist(),  cache_dir=IMAGE_CACHE_DIR)
 
-    # ── Processor & model ─────────────────────────────────────────────────────
+    # Processor and model
     device    = torch.device(
         "mps"  if torch.backends.mps.is_available() else
         "cuda" if torch.cuda.is_available()         else
@@ -321,7 +321,7 @@ if __name__ == "__main__":
     clip_model = CLIPModel.from_pretrained(CLIP_MODEL_NAME)
     classifier = CLIPClassifier(clip_model, NUM_LABELS).to(device)
 
-    # ── Data Augmentation ─────────────────────────────────────────────────────
+    # Data augmentation
     # Standard resizing/normalization handled by CLIPProcessor later, 
     # but geometric and color transforms help small datasets generalize.
     train_transform = transforms.Compose([
@@ -330,14 +330,14 @@ if __name__ == "__main__":
         transforms.ColorJitter(brightness=0.1, contrast=0.1),
     ])
 
-    # ── DataLoaders ───────────────────────────────────────────────────────────
+    # Data loaders
     train_dataset = ImageDataset(train_images, train_df["label_id"].tolist(), processor, transform=train_transform)
     test_dataset  = ImageDataset(test_images,  test_df["label_id"].tolist(),  processor, transform=None)
 
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True,  num_workers=0)
     test_loader  = DataLoader(test_dataset,  batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
 
-    # ── Optimizer: different LR for encoder vs. head ──────────────────────────
+    # Optimizer
     optimizer = torch.optim.AdamW([
         {"params": classifier.clip.parameters(),       "lr": CLIP_LR},
         {"params": classifier.classifier.parameters(), "lr": LEARNING_RATE},
@@ -346,7 +346,7 @@ if __name__ == "__main__":
     # Cosine annealing LR scheduler over epochs
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, NUM_EPOCHS))
 
-    # ── Address Class Imbalance via Weighted Loss ─────────────────────────────
+    # Weighted loss
     # Calculate weights based on actual training data distribution
     class_weights = compute_class_weight(
         class_weight='balanced',
@@ -357,7 +357,7 @@ if __name__ == "__main__":
     print(f"\nCalculated class weights: {weight_tensor.tolist()} (Order: {LABELS})")
     criterion = nn.CrossEntropyLoss(weight=weight_tensor)
 
-    # ── Training loop with per-epoch validation & checkpointing ──────────────
+    # Training loop
     print(f"\nStarting CLIP fine-tuning ({NUM_EPOCHS} epochs) …")
     best_val_f1 = -1.0
     best_epoch = 0
@@ -404,7 +404,7 @@ if __name__ == "__main__":
             print(f"\nEarly stopping triggered (no improvement for {epochs_no_improve} epochs). Stopping at epoch {epoch}.")
             break
 
-    # ── Final Evaluation on test set using best checkpoint if available ───────
+    # Final evaluation
     print("\nEvaluating on test set …")
     # If we saved a best checkpoint, try to load its head weights into current model for final eval
     best_save_path = os.path.join(RESULTS_DIR, "trained_model", "best_clip_visual")
@@ -422,7 +422,7 @@ if __name__ == "__main__":
 
     preds, labels = evaluate(classifier, test_loader, device)
 
-    print("\n── Classification Report ──────────────────────────────────────────")
+    print("\nClassification Report")
     report = classification_report(labels, preds, target_names=LABELS, zero_division=0)
     print(report)
 
@@ -439,7 +439,7 @@ if __name__ == "__main__":
         fp.write(f"\nWeighted F1: {f1_w:.4f}  |  Macro F1: {f1_m:.4f}\n")
     print(f"Evaluation report saved → {report_path}")
 
-    # ── Save final model (latest) ────────────────────────────────────────────
+    # Save model
     final_save_path = os.path.join(RESULTS_DIR, "trained_model", "clip_visual")
     os.makedirs(final_save_path, exist_ok=True)
     try:
