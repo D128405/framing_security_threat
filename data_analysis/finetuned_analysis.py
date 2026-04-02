@@ -22,12 +22,9 @@ import torch.nn as nn
 from PIL import Image
 from tqdm import tqdm
 
-# ── Silence noisy warnings ─────────────────────────────────────────────────────
 warnings.filterwarnings("ignore")
 
-# ══════════════════════════════════════════════════════════════════════════════
-# CONFIGURATION
-# ══════════════════════════════════════════════════════════════════════════════
+# Configuration
 PROJECT_ROOT = (
     "/Users/davidluu/Library/Mobile Documents/com~apple~CloudDocs/ACADEMIA/me/"
     "Publications/Securitizing the Global South in a Bipolar World Order "
@@ -82,9 +79,7 @@ _HEADERS = {
     "Connection": "keep-alive",
 }
 
-# ══════════════════════════════════════════════════════════════════════════════
-# HELPERS
-# ══════════════════════════════════════════════════════════════════════════════
+# Helpers
 
 def hms(seconds: float) -> str:
     m, s = divmod(int(seconds), 60)
@@ -112,9 +107,7 @@ def label_to_score(label):
     val = LABEL2SCORE.get(str(label).strip().lower())
     return SCORE_STD_MAP.get(val, np.nan)
 
-# ══════════════════════════════════════════════════════════════════════════════
-# MODELS
-# ══════════════════════════════════════════════════════════════════════════════
+# Models
 
 def load_roberta(model_dir: str, device: torch.device):
     from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -143,9 +136,7 @@ def load_clip_classifier(model_dir: str, device: torch.device):
     clf.classifier.load_state_dict(torch.load(os.path.join(model_dir, "classifier_head.pt"), map_location="cpu"))
     return proc, clf.to(device).eval()
 
-# ══════════════════════════════════════════════════════════════════════════════
-# LOCAL CACHING & INFERENCE PIPELINE
-# ══════════════════════════════════════════════════════════════════════════════
+# Caching
 
 def pre_download_images_politely(df, fname, session):
     """
@@ -244,9 +235,7 @@ def process_text_streaming(df, tokenizer, model, device, fname):
         results.extend([ID2LABEL[int(p)] for p in logits.argmax(-1).cpu().numpy()])
     return results
 
-# ══════════════════════════════════════════════════════════════════════════════
-# MAIN EXECUTION
-# ══════════════════════════════════════════════════════════════════════════════
+# Main
 
 if __name__ == "__main__":
     start_time = time.time()
